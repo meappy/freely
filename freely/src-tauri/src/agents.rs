@@ -154,7 +154,12 @@ pub async fn check_tool_installed(tool: String) -> Result<ToolInstalledResult, S
         other => return Err(format!("Unknown tool: {}", other)),
     };
 
-    let installed = which_exists(binary).await;
+    // Use resolve_binary rather than which_exists: macOS GUI apps launched from
+    // Finder/Dock inherit a minimal PATH (/usr/bin:/bin:/usr/sbin:/sbin), so a bare
+    // `which claude` misses the common install dirs the agent runners already fall
+    // back to. Without this the UI reports the tool as unavailable even though
+    // run_claude_agent would have spawned it successfully.
+    let installed = resolve_binary(binary).await.is_ok();
     Ok(ToolInstalledResult { installed })
 }
 
